@@ -115,6 +115,7 @@ namespace Server.Game.Room
                 if (_playerMap.Remove(objectId, out player) == false)
                     return;
 
+                player.OnLeaveGame();
                 Map.ApplyLeaveFromGrid(player);
                 player.Room = null;
                 // 본인에게 정보 전송 [나 님 나가!]

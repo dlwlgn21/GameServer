@@ -37,18 +37,8 @@ namespace Server
 			ConfigManager.LoadConfig();
 			DataManager.LoadData();
 
-			// DBTest
-			using (var db = new GameDbContext())
-			{
-				db.Accounts.Add(new AccountDb() { AccountName = "TestAccount"});
-				db.SaveChanges();
-			}
-			int a = 0;
-
 			GameRoom room = RoomManager.Instance.Add(1);
 			TickRoom(room, 50);
-
-
 
 			// DNS (Domain Name System)
 			string host = Dns.GetHostName();
@@ -61,7 +51,8 @@ namespace Server
 
 			while (true)
 			{
-				Thread.Sleep(100);
+				//Thread.Sleep(100);
+				DbTransaction.Instance.Flush();
 			}
 		}
 	}

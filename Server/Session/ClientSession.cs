@@ -15,12 +15,15 @@ using System.Diagnostics;
 
 namespace Server
 {
-	public class ClientSession : PacketSession
+	public partial class ClientSession : PacketSession
 	{
+		public PlayerServerState ServerState { get; private set; } = PlayerServerState.ServerStateLogin;
 		public Player OwnerPlayer { get; set; }
 		public int SessionId { get; set; }
 
-		public void Send(IMessage packet)
+
+#region Network
+        public void Send(IMessage packet)
 		{
 			string msgName = packet.Descriptor.Name.Replace("_", string.Empty);
 
@@ -37,25 +40,10 @@ namespace Server
 		{
 			Console.WriteLine($"OnConnected : {endPoint}");
 
-			// PROTO Test
-			OwnerPlayer = ObjectManager.Instance.Add<Player>();
 			{
-				OwnerPlayer.Info.Name = $"Player_{OwnerPlayer.Info.ObjectId}";
-				OwnerPlayer.Info.PosInfo.State = CharacterState.Idle;
-				OwnerPlayer.Info.PosInfo.MoveDir = MoveDir.Right;
-				OwnerPlayer.Info.PosInfo.PosX = 0;
-				OwnerPlayer.Info.PosInfo.PosY = 0;
-				StatInfo stat = null;
-				if (DataManager.StatMap.TryGetValue(1, out stat) == false)
-				{
-					Debug.Assert(false);
-					return;
-				}
-				OwnerPlayer.StatInfo.MergeFrom(stat);
-				OwnerPlayer.Session = this;
-            }
-			GameRoom room = RoomManager.Instance.FindOrNUll(1);
-            room.Push(room.EnterGame,OwnerPlayer);
+				S_Connected connectedPkt = new S_Connected();
+				Send(connectedPkt);
+			}
 		}
 
 		public override void OnRecvPacket(ArraySegment<byte> buffer)
@@ -75,5 +63,6 @@ namespace Server
 		{
 			//Console.WriteLine($"Transferred bytes: {numOfBytes}");
 		}
-	}
+#endregion
+    }
 }
