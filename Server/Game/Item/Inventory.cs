@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace Server.Game.Item
@@ -31,6 +32,17 @@ namespace Server.Game.Item
                     return item;
             }
             Debug.Assert(false);
+            return null;
+        }
+
+        public int? GetEmptySlotOrNull()
+        {
+            for (int slot = 0; slot < 20; ++slot)
+            {
+                Item item = _itemMap.Values.FirstOrDefault(item => item.Slot == slot);
+                if (item == null)
+                    return slot;
+            }
             return null;
         }
     }

@@ -1,5 +1,7 @@
 ﻿using Google.Protobuf.Protocol;
 using Microsoft.EntityFrameworkCore;
+using Server.Data;
+using Server.Game.Item;
 using Server.Game.Job;
 using Server.Game.Object;
 using Server.Game.Room;
@@ -53,7 +55,6 @@ namespace Server.DB
             });
 
         }
-
         // Me
         public static void SavePlayerStatus_Step1(Player player, GameRoom room)
         {
@@ -68,7 +69,6 @@ namespace Server.DB
             playerDb.Hp = player.StatInfo.Hp;
             Instance.Push<PlayerDb, GameRoom>(SavePlayerStatus_Step2, playerDb, room);
         }
-
         // You
         public static void SavePlayerStatus_Step2(PlayerDb playerDb, GameRoom room)
         {
@@ -92,11 +92,59 @@ namespace Server.DB
                 }
             }
         }
-
         // Me
         public static void SavePlayerStatus_Step3(int hp)
         {
             Console.WriteLine($"Hp Saved At DB {hp}");
+        }
+
+        public static void RewardToPlayer(Player player, RewardData rewradData, GameRoom room)
+        {
+            Debug.Assert(player != null && rewradData != null && room != null);
+
+            // TODO : 살짝 문제가 있긴 하다...
+            int? slot = player.Inven.GetEmptySlotOrNull();
+            if (slot == null)
+            {
+                Console.WriteLine("Inven Full!!");
+                return;
+            }
+
+            ItemDb itemDb = new ItemDb()
+            {
+                TemplatedId = rewradData.itemId,
+                Count = rewradData.count,
+                Slot = slot.Value,
+                OwnerDbId = player.PlayerDbId
+            };
+
+            Instance.Push(() =>
+            {
+                using (GameDbContext db = new GameDbContext())
+                {
+                    // DB 접근을 최소화 하기 위해 이런식으로 짬.
+                    db.Items.Add(itemDb);
+                    bool isSaveSuccess = db.SaveChangesEx();
+                    Debug.Assert(isSaveSuccess);
+                    if (isSaveSuccess)
+                    {
+                        // Me -> 그니까 다시 '나'한테 일감을 다시 던져줌.
+                        room.Push(() => 
+                        {
+                            Item newItem = Item.MakeItem(itemDb);
+                            player.Inven.Add(newItem);
+
+                            {
+                                S_AddItem addItemPkt = new S_AddItem();
+                                ItemInfo itemInfo = new ItemInfo();
+                                itemInfo.MergeFrom(newItem.Info);
+                                addItemPkt.Items.Add(itemInfo);
+                                player.Session.Send(addItemPkt);
+                            }
+                        });
+                    }
+                }
+            });
         }
     }
 }

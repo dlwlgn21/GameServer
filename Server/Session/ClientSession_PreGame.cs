@@ -126,9 +126,9 @@ namespace Server
                 {
                     List<ItemDb> items = db.Items.Where(item => item.OwnerDbId == playerInfo.PlayerDbId).ToList();
 
-                    for (int i = 0; i < 4; ++i)
+                    foreach (ItemDb itemDb in items)
                     {
-                        Item item = Item.MakeItem(items[i]);
+                        Item item = Item.MakeItem(itemDb);
                         if (item != null)
                         {
                             OwnerPlayer.Inven.Add(item);

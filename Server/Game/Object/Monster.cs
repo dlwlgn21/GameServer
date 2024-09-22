@@ -1,5 +1,6 @@
 ﻿using Google.Protobuf.Protocol;
 using Server.Data;
+using Server.DB;
 using Server.Game.Room;
 using System;
 using System.Collections.Generic;
@@ -197,7 +198,16 @@ namespace Server.Game.Object
         {
             base.OnDie(attacker);
 
-            // TODO : 아이템 생성
+            GameObject owner = attacker.GetOwner();
+            if (owner.ObjectType == GameObjectType.Player)
+            {
+                RewardData rewardData = GetRewardOrNull();
+                if (rewardData != null)
+                {
+                    Player player = (Player)owner;
+                    DbTransaction.RewardToPlayer(player, rewardData, Room);
+                }
+            }
         }
 
 
