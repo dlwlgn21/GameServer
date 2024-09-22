@@ -1,0 +1,142 @@
+9.21 
+DB연동 실습 - 접속
+Login을 위한 패킷 설계,
+ClientSession.OnConnected에서  
+S_Connected패킷 쏴주기 
+
+PktHadler에서 S_Login패킷 쏴주기.
+Account없으면 DB에 추가해주기
+
+유니티 클라에서
+패킷달라진 거에 맞게 PktHandler 수정.
+
+서버 켜놓고 클라가 접속하면
+정상적으로 로그인 된거까지 확인!
+
+Player 연동 #1
+
+로그인 단계, 로비단계로 구분되어 있다고 생각하고 서버에서 작업
+Player도 DB에 저장해주기.
+로비에서 캐릭터 선택해서 게임 입장하는 로직을 구현하기 위해서..
+패킷 PlayerServerState추가
+패킷 LobbyPlayerInfo 추가.(S_Login에 같이 추가)
+패킷 C,S_CreatePlayer 추가
+패킷 C_EnterGame 추가
+ClientSession partial class로 추가
+그래서 ClientSession_PreGame.cs 만듦.
+ClientSession.HandleLogin()에서 DB접근, 로그인 관리.
+
+DataModel.PlayerDb.Account FK 추가
+DataModel.PlayerDb에 StatInfo 속성들 하나씩 무식하게 다 추가.
+그리고 DB Migration
+
+Player 연동 #2
+
+Sever의 ClientSession.HandleLogin에서
+	LobbyPlayerInfo들 메모리에(멤버변수에) 들고 있음.(굳이 DB접근 안하고 재사용 할 수 있게)
+	AccountDbId도 메모리에(멤버변수에) 들고 있음!
+	Account의 Player들 정보 읽어서 LobbyPlayerInfo 패킷 쏴 줌.
+	Player정보가 없으면 너는 Player들 정보가 없어 패킷 쏴줌.
+	로비로 이동해주기도 추가.
+Sever의 ClientSession.HandleCreatePlayer, HadleEnterGame추가.
+
+클라의 S_LoginHandler에서는 플레이어들 없으면 새로 만들어주세요 하고 서버에 패킷 쏴줌.
+
+HP 연동 #1
+
+전투가 발생 했을때 내 HP를 DB에 저장하는게 이번시간의 목표!
+Player의 DbId를 알기 위해서 LobbyPlayerInfo 패킷 정보 수정!
+
+ClientSession.HandleLogin에서 Account Db에서 긁어오면서 
+Accout가 들고있떤 player들 LobbyPlayerInfo 패킷 만들어 보내면서
+PlayerDbId 넣어줌!
+마찬가지로 
+ClientSession.HandleCreatePlayer에서 LobbyPlayerInfo 패킷 만들어 보내면서
+PlayerDbId 넣어줌!
+
+근데 피가 깍일때마다 DB 연동하는건 바보짓.
+DB접근은 최소화 하는게 거의 언제나 좋다.
+
+그러므로 Player에 OnLeaveGame() 추가해서 GameRoom 나갈 때 DB 연동하게 함.
+그래서 GameRoom에서 LeaveGame할 때 player.OnLeaveGame 호출해줌.
+하지만 이런 식으로 일이 처리되면 작성하면 코드 흐름을 다 막아버린다는 매우 치명적인 문제가 있음. 
+왜냐 ? 지금 GameRoom에서 OnLeaveGame()호출해주고 있는데
+GameRoom은 JobSerializer 상속받아서 쓰레드 하나로 돌아가게 만들어놨음.
+근데 GameRoom에서 DB 접근하게 해버리면 일이 밀려!! DB접근은 일단 느리니까!!
+그럼 이제 다른 애들도 일이 밀려버림
+수정방법은 뭐가 있을까? 
+1. 비동기 방법 사용?
+2. 혹은 다른 쓰레드로 DB 일감을 던져버리면 되지 않을까?
+우린 여기서 2의 방법을 사용할 것이다!  
+그런데 주의할 점은
+일감은 결과를 받아서 이어서 처리를 해야 하는 경우가 많음.
+즉 결국에 허락받고 그 다음 일 처리하게 만들어주어야 함.
+
+
+9.22
+HP 연동 #2
+그래서 방금 위에 말한 일감 던져주면 처리해주는 클래스 하나 새로 팜.
+JobSerializer를 상속받는 싱글톤 DbTransaction!
+이제 DbTransaction이 DB에 저장하는 로직 담당하게 될 것임!
+
+이제 DB 저장하는건 일감을 던져줄거양!!
+
+CPU가 빨리 돌아가야 하는 부분과
+IO와 관련된 부분을 구분했다고 보면 맞다.
+
+
+Item #1
+1. 일단 EntityClass [ItemDb] 만들어줌
+2. DB Migration, Update (DB 다시 밀어버림)
+3. 아이템 로딩하는데에 가서 작업(즉 ClientSession_Pregame 부분에서)
+	우리는 게임에 접속, 즉 EnterGame하는 순간에 아이템 로딩해줄 것!
+	HandleEnterGame() 부분에서!
+4. 패킷 ItemEnum 정보들 추가, S_ItemList 패킷 추가. ItemInfo 추가
+5. DataManager에 ItemDataModeling.
+6. ItemDataSheet를 만들기 위해서 UnityClient에 ItemDataSheet 추가!
+7. Client에 S_ItemListHandler 추가
+8. 메모리에 들고 있기 위해서, 즉 캐싱해놓기 위해 Server의 Game폴더에 Item폴더 추가하고 Item클래스 추가, Inventory클래스 추가
+9. Player에 Inventory 들고 있게 함.
+10. Item.cs파일에 Weapon, Armor, Consumable클래스 추가.
+11. Item DB에 추가해주고 처음 들어오는 Player가 Item 들고있게 해쥼! 
+
+Inventory #1
+
+Client에 보여주기 위한 UI Inventory작업!
+에셋들 다운받고, 설정해주고~
+UIScript들 만들어쥬고~
+서버쪽 Item 코드 긁어와서 클라에도 추가!
+S_ItemlistPacketHandler에서 
+아이템 메모리에 로드하고,
+UI에 표시하는 부분 추가!
+
+핵심 코드 추가부분
+
+1. InventoryManager Class는 메모리에 Item 들고 있을거임.
+이 녀석 이용해서 UI_Inventory가 Item들 그려줌.
+
+
+2. UI_Inventory Class
+UI_Inventory_Item을 List로 들고있음.
+이녀석이 ItemGrid Object의 부모.
+그리고 이녀석이 UI_Inventory_Item을 관리.
+추가하고, 빼고..
+S_ItemlistHandler에서
+Server에서 Itemlist 보내주면 그거 UI에 반영하는 녀석임.
+S_ItemListHandler()에서 RefreshUI호출해주면
+반영해줌.
+
+Reward #1 (몬스터가 Item을 내 인벤토리에 꽃아주게)
+서버
+Data.Contents.cs파일에
+RewardData Class 추가.
+MonsterData Class 추가.
+MonsterLoader Class추가.
+
+Monster.OnDie(GameObject)에 아이템 생성하는 코드 추가
+
+클라이언트
+MonsterData Class 추가.
+MonsterLoader Class추가.
+
+

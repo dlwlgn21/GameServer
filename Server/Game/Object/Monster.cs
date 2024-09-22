@@ -10,6 +10,7 @@ namespace Server.Game.Object
 {
     public class Monster : GameObject
     {
+        public int TemplateId { get; private set; }
         Player _target;
         long _nextSearchTick = 0;
         long _nextMoveTick = 0;
@@ -20,12 +21,16 @@ namespace Server.Game.Object
         public Monster()
         {
             ObjectType = GameObjectType.Monster;
+        }
 
-            // TMP
-            StatInfo.Level = 1; 
-            StatInfo.Hp = 100; 
-            StatInfo.MaxHp = 100; 
-            StatInfo.Speed = 5f;
+        public void Init(int templateId)
+        {
+            TemplateId = templateId;
+            MonsterData monData;
+            DataManager.MonsterDataMap.TryGetValue(TemplateId, out monData);
+            Debug.Assert(monData != null);
+            StatInfo.MergeFrom(monData.stat);
+            StatInfo.Hp = monData.stat.MaxHp;
             ECurrState = CharacterState.Idle;
         }
 
@@ -188,12 +193,40 @@ namespace Server.Game.Object
 
         }
 
+        public override void OnDie(GameObject attacker)
+        {
+            base.OnDie(attacker);
+
+            // TODO : 아이템 생성
+        }
+
+
         void BroadcastMove()
         {
             S_Move movePkt = new S_Move();
             movePkt.ObjectId = Id;
             movePkt.PosInfo = PosInfo;
             Room.BroadcastToAllPlayer(movePkt);
+        }
+
+        RewardData GetRewardOrNull()
+        {
+            MonsterData monData;
+            DataManager.MonsterDataMap.TryGetValue(TemplateId, out monData);
+            Debug.Assert(monData != null);
+
+            int rand = new Random().Next(0, 101);
+            int sum = 0;
+            foreach (RewardData reward in monData.rewards)
+            {
+                sum += reward.probability;
+                if (rand <= sum)
+                {
+                    return reward;
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf.Protocol;
 using Microsoft.EntityFrameworkCore;
 using Server.DB;
+using Server.Game.Item;
 using Server.Game.Room;
 using Server.Utills;
 using System;
@@ -14,6 +15,7 @@ namespace Server.Game.Object
     {
         public int PlayerDbId { get; set; }
         public ClientSession Session { get; set; }
+        public Inventory Inven { get; private set; } = new Inventory();
         public Player()
         {
             ObjectType = GameObjectType.Player;
@@ -46,7 +48,6 @@ namespace Server.Game.Object
             //      결과를 받아서 이어서 처리를 해야 하는 경우가 많음.
             //
             //  즉 결국에 허락받고 그 다음 일 처리하게 만들어주어야 함.
-            // 3. 
 
             DbTransaction.SavePlayerStatus_Step1(this, Room);
         }

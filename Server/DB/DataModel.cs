@@ -30,5 +30,20 @@ namespace Server.DB
         public int Attack { get; set; }
         public float Speed { get; set; }
         public int TotalExp { get; set; }
+
+        public ICollection<ItemDb> Items { get; set; }
+    }
+
+    [Table("Item")]
+    public class ItemDb
+    {
+        public int ItemDbId { get; set; }
+        public int TemplatedId { get; set; } // Datasheet의 ID
+        public int Count { get; set; }
+        public int Slot { get; set; } // Inventory Slot
+
+        [ForeignKey("Owner")]
+        public int? OwnerDbId { get; set; }
+        public PlayerDb Owner { get; set; }
     }
 }

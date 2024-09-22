@@ -3,6 +3,7 @@ using Google.Protobuf.Protocol;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.DB;
+using Server.Game.Item;
 using Server.Game.Object;
 using Server.Game.Room;
 using Server.Utills;
@@ -93,7 +94,6 @@ namespace Server
                 }
             }
         }
-
         public void HandleEnterGame(C_EnterGame enterPkt)
         {
             if (ServerState != PlayerServerState.ServerStateLobby)
@@ -119,6 +119,26 @@ namespace Server
                 OwnerPlayer.Info.PosInfo.PosY = 0;
                 OwnerPlayer.StatInfo.MergeFrom(playerInfo.StatInfo);
                 OwnerPlayer.Session = this;
+
+                S_ItemList itemListPkt = new S_ItemList();
+                // Player가 들고 있는 아이템 목록을 가지고 온다.
+                using (GameDbContext db = new GameDbContext())
+                {
+                    List<ItemDb> items = db.Items.Where(item => item.OwnerDbId == playerInfo.PlayerDbId).ToList();
+
+                    for (int i = 0; i < 4; ++i)
+                    {
+                        Item item = Item.MakeItem(items[i]);
+                        if (item != null)
+                        {
+                            OwnerPlayer.Inven.Add(item);
+                            ItemInfo info = new ItemInfo();
+                            info.MergeFrom(item.Info);
+                            itemListPkt.Items.Add(info);
+                        }
+                    }
+                }
+                Send(itemListPkt);
             }
             ServerState = PlayerServerState.ServerStateGame;
             GameRoom room = RoomManager.Instance.FindOrNUll(1);

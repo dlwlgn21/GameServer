@@ -1,5 +1,6 @@
-﻿using System;
+﻿			using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -13,6 +14,7 @@ using Server.Data;
 using Server.DB;
 using Server.Game.Job;
 using Server.Game.Room;
+using Server.Utills;
 using ServerCore;
 
 namespace Server
@@ -36,6 +38,46 @@ namespace Server
 		{
 			ConfigManager.LoadConfig();
 			DataManager.LoadData();
+
+			//// TEST Code
+			//using (GameDbContext db = new GameDbContext())
+			//{
+			//	PlayerDb playerDb = db.Players.FirstOrDefault();
+			//	if (playerDb != null)
+			//	{
+			//		db.Items.Add(new ItemDb() 
+			//		{
+			//			TemplatedId = 1,
+			//			Count = 1,
+			//			Slot = 0,
+			//			Owner = playerDb
+			//		});
+   //                 db.Items.Add(new ItemDb()
+   //                 {
+   //                     TemplatedId = 100,
+   //                     Count = 1,
+   //                     Slot = 1,
+   //                     Owner = playerDb
+   //                 });
+   //                 db.Items.Add(new ItemDb()
+   //                 {
+   //                     TemplatedId = 101,
+   //                     Count = 1,
+   //                     Slot = 2,
+   //                     Owner = playerDb
+   //                 });
+   //                 db.Items.Add(new ItemDb()
+   //                 {
+   //                     TemplatedId = 200,
+   //                     Count = 10,
+   //                     Slot = 5,
+   //                     Owner = playerDb
+   //                 });
+
+			//		db.SaveChangesEx();
+   //             }
+			//}
+
 
 			GameRoom room = RoomManager.Instance.Add(1);
 			TickRoom(room, 50);
