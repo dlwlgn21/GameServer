@@ -7,6 +7,7 @@ using Server.Utills;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Numerics;
 using System.Text;
 
 namespace Server.Game.Object
@@ -16,6 +17,13 @@ namespace Server.Game.Object
         public int PlayerDbId { get; set; }
         public ClientSession Session { get; set; }
         public Inventory Inven { get; private set; } = new Inventory();
+
+        public int WeaponDamage { get; private set; }
+        public int ArmorDefence { get; private set; }
+
+        public override int TotalAttack { get { return StatInfo.Attack + WeaponDamage; } }
+        public override int TotalDefence { get { return ArmorDefence; } }
+
         public Player()
         {
             ObjectType = GameObjectType.Player;
@@ -50,6 +58,88 @@ namespace Server.Game.Object
             //  즉 결국에 허락받고 그 다음 일 처리하게 만들어주어야 함.
 
             DbTransaction.SavePlayerStatus_Step1(this, Room);
+        }
+
+        public void HandleEquipItem(C_EquipItem eqiupPkt)
+        {
+            Server.Game.Item.Item item = Inven.GetOrNull(eqiupPkt.ItemDbId);
+            Debug.Assert(item != null);
+
+            if (item.ItemType == ItemType.Consumable)
+                return;
+
+            // 착용 요청이라면, 겹치는 부위는 해제
+            if (eqiupPkt.IsEquiped)
+            {
+                Server.Game.Item.Item unequipedItem = null;
+                if (item.ItemType == ItemType.Weapon)
+                {
+                    unequipedItem = Inven.FindByConditionOrNull(
+                        item => item.IsEquiped && item.ItemType == ItemType.Weapon);
+                }
+                else if (item.ItemType == ItemType.Armor)
+                {
+                    ArmorType armorType = ((Armor)item).ArmorType;
+                    unequipedItem = Inven.FindByConditionOrNull(
+                        item => item.IsEquiped &&
+                        item.ItemType == ItemType.Armor &&
+                        ((Armor)item).ArmorType == armorType);
+
+                }
+
+                if (unequipedItem != null)
+                {
+                    // 메모리 선 적용.
+                    unequipedItem.IsEquiped = false;
+
+                    // Noti To DB
+                    DbTransaction.EqiupItemNoti(this, unequipedItem);
+
+                    // Noti To Client
+                    S_EquipItem equipOkPkt = new S_EquipItem();
+                    equipOkPkt.ItemDbId = unequipedItem.ItemDbId;
+                    equipOkPkt.IsEquiped = unequipedItem.IsEquiped;
+                    Session.Send(equipOkPkt);
+                }
+            }
+
+            {
+                // 메모리 선 적용.
+                item.IsEquiped = eqiupPkt.IsEquiped;
+
+                // Noti To DB
+                DbTransaction.EqiupItemNoti(this, item);
+
+                // Noti To Client
+                S_EquipItem equipOkPkt = new S_EquipItem();
+                equipOkPkt.ItemDbId = eqiupPkt.ItemDbId;
+                equipOkPkt.IsEquiped = eqiupPkt.IsEquiped;
+                Session.Send(equipOkPkt);
+            }
+            RefreshAddtionalStat();
+        }
+
+
+        public void RefreshAddtionalStat()
+        {
+            WeaponDamage = 0;
+            ArmorDefence = 0;
+
+            foreach (Item.Item item in Inven.ItemMap.Values)
+            {
+                if (!item.IsEquiped)
+                    continue;
+
+                switch (item.ItemType)
+                {
+                    case ItemType.Weapon:
+                        WeaponDamage += ((Weapon)item).Damage;
+                        break;
+                    case ItemType.Armor:
+                        ArmorDefence += ((Armor)item).Defence;
+                        break;
+                }
+            }
         }
     }
 }

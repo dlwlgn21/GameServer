@@ -171,7 +171,7 @@ namespace Server.Game.Object
                 }
 
                 // 데미지 판정
-                _target.OnDamaged(this, skillData.damage + StatInfo.Attack);
+                _target.OnDamaged(this, skillData.damage + TotalAttack);
 
                 // 스킬 사용 Broadcast
                 S_Skill skillPkt = new S_Skill() { Info = new SkillInfo() };

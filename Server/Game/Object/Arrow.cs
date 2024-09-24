@@ -12,21 +12,17 @@ namespace Server.Game.Object
     {
         public GameObject Owner { get; set; }
 
-        long _nextMoveTick = 0;
         public override void Update()
         {
-            if (OwnerData == null || OwnerData.projectileInfo == null  ||Owner == null || Room == null )
+            if (OwnerData == null || OwnerData.projectileInfo == null || Owner == null || Room == null )
             {
                 Debug.Assert(false);
                 return;
             }
-
-            if (_nextMoveTick >= Environment.TickCount64)
-                return;
             // 1초를 Speed로 나눈게 내가 기다려야 하는 틱이 되는 것.
-            long tick = (long)(1000 / Speed); 
-            _nextMoveTick = Environment.TickCount64 + tick;
-
+            int tick = (int)(1000 / Speed);
+            Room.PushAfter(tick, Update);
+            Console.WriteLine("Arrow.Update Called!!");
             Vector2Int destPos = GetFrontCellPosFromCurrDir();
             if (Room.Map.IsCanGo(destPos))
             {
@@ -42,7 +38,7 @@ namespace Server.Game.Object
                 GameObject target = Room.Map.GetGameObjectFromSpecifiedPositionOrNull(destPos);
                 if (target != null)
                 {
-                    target.OnDamaged(this, OwnerData.damage + Owner.StatInfo.Attack);
+                    target.OnDamaged(this, OwnerData.damage + Owner.TotalAttack);
                 }
 
                 // 소멸

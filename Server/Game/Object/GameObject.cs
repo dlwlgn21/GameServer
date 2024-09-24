@@ -22,6 +22,9 @@ namespace Server.Game.Object
         public PositionInfo PosInfo { get; private set; } = new PositionInfo();
         public StatInfo StatInfo { get; private set; } = new StatInfo();
 
+        public virtual int TotalAttack { get { return StatInfo.Attack; } }
+        public virtual int TotalDefence { get { return 0; } }
+
         public float Speed
         {
             get { return StatInfo.Speed; }
@@ -112,6 +115,7 @@ namespace Server.Game.Object
                 Debug.Assert(false);
                 return;
             }
+            damage = Math.Max(damage - TotalDefence, 1);
             StatInfo.Hp = Math.Max(StatInfo.Hp - damage, 0);
             S_ChangeHp changeHpPket = new S_ChangeHp();
             changeHpPket.ObjectId = Id;

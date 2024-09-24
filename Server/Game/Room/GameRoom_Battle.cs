@@ -82,6 +82,7 @@ namespace Server.Game.Room
                         if (target != null)
                         {
                             Console.WriteLine($"{player.Info.ObjectId} is attack to GameObject {target.Info.ObjectId}");
+                            target.OnDamaged(player, skillData.damage + player.TotalAttack);
                         }
                     }
                     break;

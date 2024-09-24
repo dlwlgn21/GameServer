@@ -5,6 +5,7 @@ using Server.Game.Object;
 using System.Diagnostics;
 
 using Server.DB;
+using Server.Game.Item;
 
 namespace Server.Game.Room
 {
@@ -15,24 +16,7 @@ namespace Server.Game.Room
             Debug.Assert(player != null);
             if (player == null)
                 return;
-
-            Server.Game.Item.Item item = player.Inven.GetOrNull(eqiupPkt.ItemDbId);
-            Debug.Assert(item != null);
-
-
-
-
-            // 메모리 선 적용.
-            item.IsEquiped = eqiupPkt.IsEquiped;
-
-            // Noti To DB
-            DbTransaction.EqiupItemNoti(player, item);
-
-            // Noti To Client
-            S_EquipItem equipOkPkt = new S_EquipItem();
-            equipOkPkt.ItemDbId = eqiupPkt.ItemDbId;
-            equipOkPkt.IsEquiped = eqiupPkt.IsEquiped;
-            player.Session.Send(equipOkPkt);
+            player.HandleEquipItem(eqiupPkt);
         }
 
     }

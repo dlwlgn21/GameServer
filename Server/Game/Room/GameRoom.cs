@@ -33,8 +33,6 @@ namespace Server.Game.Room
         // 누군가가 주기적으로 호출해주어야 한다!
         public void Update()
         {
-            foreach (var projectile in _projectileMap.Values)
-                projectile.Update();
             foreach (var monster in _monsterMap.Values)
                 monster.Update();
             
@@ -48,13 +46,15 @@ namespace Server.Game.Room
                 Debug.Assert(false);
                 return;
             }
-        GameObjectType eType = ObjectManager.GetOjbectTypeById(gameObject.Id);
+            GameObjectType eType = ObjectManager.GetOjbectTypeById(gameObject.Id);
 
             if (eType == GameObjectType.Player)
             {
                 Player newPlayer = (Player)gameObject;
                 _playerMap.Add(newPlayer.Id, newPlayer);
                 newPlayer.Room = this;
+
+                newPlayer.RefreshAddtionalStat();
                 Map.ApplyMove(newPlayer, new Vector2Int(newPlayer.CellPos.x, newPlayer.CellPos.y));
 
                 // 본인한테 정보 전송 [나 님 두둥 등장]
@@ -76,7 +76,7 @@ namespace Server.Game.Room
 
                     foreach (Projectile p in _projectileMap.Values)
                         spawnPkt.Objects.Add(p.Info);
-
+                    
                     newPlayer.Session.Send(spawnPkt);
                 }
             }
@@ -92,6 +92,7 @@ namespace Server.Game.Room
                 Projectile newProjectile = (Projectile)gameObject;
                 _projectileMap.Add(newProjectile.Id, newProjectile);
                 newProjectile.Room = this;
+                newProjectile.Update();
             }
                 
             // 타인들에게 정보 전송 [신입 왔어!!]
