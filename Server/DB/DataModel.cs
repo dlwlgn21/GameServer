@@ -42,6 +42,8 @@ namespace Server.DB
         public int Count { get; set; }
         public int Slot { get; set; } // Inventory Slot
 
+        public bool IsEquiped { get; set; } = false;
+
         [ForeignKey("Owner")]
         public int? OwnerDbId { get; set; }
         public PlayerDb Owner { get; set; }

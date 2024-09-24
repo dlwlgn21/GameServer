@@ -13,7 +13,7 @@ using System.Text;
 
 namespace Server.DB
 {
-    public class DbTransaction : JobSerializer
+    public partial class DbTransaction : JobSerializer
     {
         public static DbTransaction Instance { get; } = new DbTransaction();
         
@@ -103,6 +103,10 @@ namespace Server.DB
             Debug.Assert(player != null && rewradData != null && room != null);
 
             // TODO : 살짝 문제가 있긴 하다...
+            // 문제가 있는 부분 -> 타이밍이슈가 발생할 수 있음.
+            // 1. DB에다가 저장 요청 -> 이곳에서 동시에 요청할 경우 문제 발생.
+            // 2. DB저장 OK
+            // 3. 메모리에 적용
             int? slot = player.Inven.GetEmptySlotOrNull();
             if (slot == null)
             {

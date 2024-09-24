@@ -132,11 +132,42 @@ Data.Contents.cs파일에
 RewardData Class 추가.
 MonsterData Class 추가.
 MonsterLoader Class추가.
-
 Monster.OnDie(GameObject)에 아이템 생성하는 코드 추가
+안전한 Reward추가를 위해서 막타친애가 누군지 알게 해주기 위해서 (Projectile이 막타 칠수도 있으니까)
+GameObject.GetOwner() 추가.
+DB 접근을 하니까 최적화를 위해서 DbTransaction.RewardToPlayer() 추가.
+Item을 Inventoryt에 넣기 위해서는 빈슬롯을 알아야 하니까 Inventory.GetEmptySlotOrNull() 추가. 
+Reward를 위한 S_ItemAdd Pakcet 추가.
 
 클라이언트
 MonsterData Class 추가.
 MonsterLoader Class추가.
+S_AddItemPktHandelr에서 Inventory에 Item 추가.
+MyPlayerController에서 I키로 인벤 뜨게 수정. 
 
+
+아이템착용 #1
+아이템 착용 위한
+C_EQUIP_ITEM,
+S_EQUIP_ITEM,
+S_CHANGE_STAT 만듦.
+
+DB에도 아이템 장착 여부를 알 수 있게 해야하므로 ItemDb.IsEquiped 프로퍼티 추가.
+아이템 장착은 EnterGame이후에 일어나는 일이므로 GameRoom에서 처리하게 해주어야 한다.
+C_EquipHandler에서 GameRoom에서 처리할 수 있게 Push해줌.
+GameRoom 클래스크기가 커지고 이쓰므로 partial로 쪼갬.
+패킷 핸들하는 부분들 따로 빼버림.
+GameRoom.HandleEquipItem()추가. <- 이곳에서 DbTransaction.EqiupItemNoti() 호출.
+DbTransaction도 메모리 선적용 한다음 DB에다가 일감만 던져주는 식으로 처리하는 녀석들은 따로 관리하고 싶어서 partial로 쪼갬.
+DbTransaction.EqiupItemNoti() 추가.
+
+아이템착용 #2
+클라에서도 이제 서버쪽 패킷 받아야 하니까 클라단 작업 시작.
+S_EquipHandler에서 처리.
+UI_Ineventory_Item Script에서 클릭 여부에 따라 착용, 비착용 적용 할 수 있도록 로직 추가.
+
+아이템착용 #3
+지금은 모든 아이템이 착용가능하다. 
+아이템 착용 부위 판정, 무기나 방어구 착용하면 Stat 변동 시키는 등의 로직을 추가할 것.
+그리고 요런거 확인해주는건 서버단에서 처리해주어야 함.
 

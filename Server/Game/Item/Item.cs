@@ -31,6 +31,14 @@ namespace Server.Game.Item
             get { return Info.Slot; }
             set { Info.Slot = value; }
         }
+
+        public bool IsEquiped
+        {
+            get { return Info.IsEquiped; }
+            set { Info.IsEquiped = value; }
+        }
+
+
         public ItemType ItemType { get; private set; }
         public bool IsStackable { get; protected set; }
         public Item(ItemType eType)
@@ -73,6 +81,7 @@ namespace Server.Game.Item
                 item.ItemDbId = itemDb.ItemDbId;
                 item.Count = itemDb.Count;
                 item.Slot = itemDb.Slot;
+                item.IsEquiped = itemDb.IsEquiped;
             }
             return item;
 

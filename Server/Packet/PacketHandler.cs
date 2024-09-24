@@ -72,4 +72,25 @@ class PacketHandler
         ClientSession cliSession = (ClientSession)session;
         cliSession.HandleCreatePlayer((C_CreatePlayer)pkt);
     }
+
+    public static void C_EquipItemHandler(PacketSession session, IMessage pkt)
+    {
+        C_EquipItem equipPkt = (C_EquipItem)pkt;
+        ClientSession cliSession = (ClientSession)session;
+
+
+        Player player = cliSession.OwnerPlayer;
+        if (player == null)
+            return;
+
+        // 이곳도 마찬가지. 다른 쓰레드에서 null 대입 해줄 수 있기 때문에 따로 받아야 한다.
+        GameRoom room = player.Room;
+        if (room == null)
+            return;
+
+
+        room.Push(room.HadnleEqiupItem, player, equipPkt);
+    }
+
+
 }
